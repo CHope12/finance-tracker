@@ -1,113 +1,429 @@
-import Image from "next/image";
+"use client";
+import { useState, useRef, useEffect, useContext } from 'react';
 
-export default function Home() {
+import Link from 'next/link';
+
+import { authContext } from '@/lib/firebase/auth-context';
+
+import Nav from '@/components/Nav';
+import Footer from '@/components/Footer';
+import Modal from '@/components/Modal';
+import SignIn from "@/components/SignIn"
+import ExpenseCategoryItem from '@/components/ExpenseCategoryItem';
+import IncomeItem from '@/components/IncomeItem';
+import ExpenseItem from '@/components/ExpenseItem';
+
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Doughnut } from 'react-chartjs-2';
+ChartJS.register(ArcElement, Tooltip, Legend);
+
+//Firebase
+import { db } from '@/lib/firebase';
+import { collection, addDoc, getDocs, getFirestore, doc, deleteDoc, query, where } from 'firebase/firestore';
+
+// Icons
+import { IoTrashOutline } from "react-icons/io5";
+
+import { IoHome } from 'react-icons/io5';
+import { IoCar } from 'react-icons/io5';
+import { LuUtensils } from "react-icons/lu";
+import { FaRegHospital } from "react-icons/fa";
+import { IoFilm } from 'react-icons/io5';
+import { FiShoppingCart } from "react-icons/fi";
+import { IoBook } from 'react-icons/io5';
+import { IoCut } from 'react-icons/io5';
+import { IoAirplane } from 'react-icons/io5';
+import { IoEllipsisHorizontal } from 'react-icons/io5';
+import { PiPiggyBank } from "react-icons/pi";
+import { HiOutlineBolt } from "react-icons/hi2";
+
+import { HiOutlineCash } from "react-icons/hi";
+import { IoCardOutline } from "react-icons/io5";
+import { IoBusinessOutline } from "react-icons/io5";
+
+const categories = [
+  {
+    title: "Housing",
+    color: "#FF6384",
+    icon: <IoHome />,
+  },
+  {
+    title: "Transportation",
+    color: "#36A2EB",
+    icon: <IoCar />,
+  },
+  {
+    title: "Food",
+    color: "#FFCE56",
+    icon: <LuUtensils />,
+  },
+  {
+    title: "Healthcare",
+    color: "#4BC0C0",
+    icon: <FaRegHospital />,
+  },
+  {
+    title: "Entertainment",
+    color: "#FF9F40",
+    icon: <IoFilm />,
+  },
+  {
+    title: "Shopping",
+    color: "#FFCD56",
+    icon: <FiShoppingCart/>,
+  },
+  {
+    title: "Education",
+    color: "#FF6384",
+    icon: <IoBook />,
+  },
+  {
+    title: "Personal Care",
+    color: "#36A2EB",
+    icon: <IoCut />,
+  },
+  {
+    title: "Travel",
+    color: "#FFCE56",
+    icon: <IoAirplane />,
+  },
+  {
+    title: "Miscellaneous",
+    color: "#4BC0C0",
+    icon: <IoEllipsisHorizontal />,
+  },
+  {
+    title: "Savings & Investments",
+    color: "#FF9F40",
+    icon: <PiPiggyBank />,
+  },
+  {
+    title: "Utilities",
+    color: "#FFCD56",
+    icon: <HiOutlineBolt />,
+  }
+];
+
+const paymentTypes = [
+  {
+    title: "Cash",
+    color: "#FF6384",
+    icon: <HiOutlineCash />,
+  },
+  {
+    title: "Card",
+    color: "#36A2EB",
+    icon: <IoCardOutline />,
+  },
+  {
+    title: "Bank",
+    color: "#FFCE56",
+    icon: <IoBusinessOutline />,
+  },
+]
+
+  export default function Home() {
+
+    const { user, loading } = useContext(authContext);
+
+    const [incomeHistory, setIncomeHistory] = useState([]);
+    const [expenseHistory, setExpenseHistory] = useState([]);
+
+    const [modalIsOpen, setModalIsOpen] = useState(false);
+
+    const closeModal = () => {
+      setModalIsOpen(false);
+    }    
+    
+    /* Income & Expenses */
+    const deleteIncomeEntryHandler = async (id) => {
+      const docRef = doc(db, "income", id);
+      try {
+        await deleteDoc(docRef);
+
+        //Update state
+        setIncomeHistory(prevState => {
+          return prevState.filter(income => income.id !== id);
+        });
+      } catch (e) {
+        console.error("Error deleting document: ", e);
+      }
+    }
+
+    const deleteExpenseEntryHandler = async (id) => {
+      const docRef = doc(db, "expenses", id);
+      try {
+        await deleteDoc(docRef);
+
+        //Update state
+        setExpenseHistory(prevState => {
+          return prevState.filter(expense => expense.id !== id);
+        });
+      } catch (e) {
+        console.error("Error deleting document: ", e);
+      }
+    };    
+
+    useEffect(() => {      
+      if(!user){
+        return;
+      }
+
+      console.log(user);
+      
+      //update income
+      const getIncomeData = async () => {                
+        const collectionRef = collection(db, "income");
+
+        const q = query(collectionRef, where("uid", "==", user.uid));
+
+        const docsSnap = await getDocs(q);
+        const data = docsSnap.docs.map(doc => {
+          return {
+            id: doc.id,
+            ...doc.data(),
+            date: new Date(doc.data().date.toMillis()),
+          };
+        })
+        setIncomeHistory(data);
+      };
+      getIncomeData();
+
+      //update expeneses
+      const getExpenseData = async () => {
+        const collectionRef = collection(db, "expenses");
+
+        const q = query(collectionRef, where("uid", "==", user.uid));
+
+        const docsSnap = await getDocs(q);
+        const data = docsSnap.docs.map(doc => {
+          return {
+            id: doc.id,
+            ...doc.data(),
+            date: new Date(doc.data().date.toMillis()),
+          };
+        })
+        setExpenseHistory(data);    
+      };
+      getExpenseData();
+
+    }, [user]);
+
+    /* Summary */    
+    const getWeekNumber = (date) => {
+      // Copy date so don't modify original
+      date = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+
+      // Set to nearest Thursday: current date + 3 - current day number
+      date.setUTCDate(date.getUTCDate() + 3 - (date.getUTCDay() + 6) % 7);
+
+      // Get first day of year
+      const week1 = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
+
+      // Calculate full weeks to nearest Thursday
+      return 1 + Math.round(((date - week1) / 86400000 - 3 + ((week1.getUTCDay() + 6) % 7)) / 7);
+    };    
+
+  if (!user && !loading) {
+    return <SignIn />;
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.js</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <>
+    <main>    
+    {user && (
+      <Modal open={modalIsOpen} close={closeModal} user={user} updateIncome={setIncomeHistory} updateExpenses={setExpenseHistory} categories={categories} paymentTypes={paymentTypes}/>
+    )}
+
+    {/* Summary */}    
+    <section className="py-4">
+
+        <div className="flex flex-col gap-2">
+          <h2 className="text-xl font-bold">Summary</h2>
+          <h3 className="text-lg">Balance and income</h3>
+          <div className="flex justify-around">
+            {/* Total balance */}
+            <div className="flex flex-col justify-center items-center">
+              <p className="text-gray-400">Your total balance is</p>          
+              <div>
+              {incomeHistory.reduce((total, income) => total + parseFloat(income.amount), 0) - expenseHistory.reduce((total, expense) => total + parseFloat(expense.amount), 0) > 0 ? (
+                <span className="text-3xl font-bold text-green-500">£{incomeHistory.reduce((total, income) => total + parseFloat(income.amount), 0) - expenseHistory.reduce((total, expense) => total + parseFloat(expense.amount), 0)}</span>
+              ) : (
+                <span className="text-3xl font-bold text-red-500">£{incomeHistory.reduce((total, income) => total + parseFloat(income.amount), 0) - expenseHistory.reduce((total, expense) => total + parseFloat(expense.amount), 0)}</span>
+              )}
+              </div>
+            </div>
+            {/* Total Income */}
+            <div className="flex flex-col justify-center items-center">
+              <p className="text-gray-400">Your total income is</p>
+              <span className="text-3xl font-bold text-green-500">£{incomeHistory.reduce((total, income) => total + parseFloat(income.amount), 0)}</span>
+            </div>            
+          </div>
+
+          <h3 className="text-lg">Expenses</h3>
+          {/* Total Expense */}
+          <div className="flex justify-left">
+            <div className="flex flex-col w-1/2 items-center justify-center">
+              <span className="text-gray-400">Your total expenses are</span>
+              <span className="text-3xl font-bold text-red-500">£{expenseHistory.reduce((total, expense) => total + parseFloat(expense.amount), 0)}</span>          
+            </div>          
+          </div>
+        </div>
+
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
+        <div className="bg-gray-100 p-4 rounded-full flex-col w-full text-center">
+          {/* Daily Expenses */}
+          <h3 className="text-gray-400">Daily expenses</h3>
+          <span className="text-xl font-bold">
+            £{expenseHistory.filter(expense => new Date(expense.date).getDate() === new Date().getDate()).reduce((total, expense) => total + parseFloat(expense.amount), 0)}
+          </span>
+        </div>
+        <div className="bg-gray-100 p-4 rounded-full flex-col w-full text-center">
+          {/* Weekly Expenses */}
+          <h3 className="text-gray-400">Weekly expenses</h3>
+          <span className="text-xl font-bold">
+            £{expenseHistory.filter(expense => getWeekNumber(new Date(expense.date)) === getWeekNumber(new Date())).reduce((total, expense) => total + parseFloat(expense.amount), 0)}
+          </span>
+        </div>
+        <div className="bg-gray-100 p-4 rounded-full flex-col w-full text-center">
+          {/* Monthly Expenses */}
+          <h3 className="text-gray-400">Monthly expenses</h3>
+          <span className="text-xl font-bold">
+            £{expenseHistory.filter(expense => new Date(expense.date).getMonth() === new Date().getMonth()).reduce((total, expense) => total + parseFloat(expense.amount), 0)}
+          </span>
         </div>
       </div>
+    </section>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
+    {/* expenses by categories */}       
+    <section className="py-4">
+      <h2 className="text-xl font-bold">Expenses By Categories</h2>
+      {categories.map((category) => {
+        const categoryAmount = expenseHistory.reduce((total, expense) => {
+          return expense.category === category.title ? total + parseFloat(expense.amount) : total;
+        }, 0).toFixed(2);
+        if (categoryAmount > 0) {
+          return (
+            <ExpenseCategoryItem
+              key={category.title}
+              title={category.title}
+              amount={categoryAmount}
+              icon={category.icon}
+              color={category.color}
+              percentage={
+                ((categoryAmount / expenseHistory.reduce((total, expense) => total + parseFloat(expense.amount), 0)) * 100).toFixed(2) + "%"
+              }
+            />
+          );
+        }
+      })}
+    </section>
+    
+
+    {/* Income History */}
+    <section className="py-4">
+      <div className="flex justify-between items-center">
+      <h3 className="text-xl font-bold">Income History</h3>
+      <Link href="/incomehistory"><button className="bg-blue-500 rounded-lg px-2 py-1 text-white">View All</button></Link>
+      </div>
+
+      {incomeHistory.length > 3 ? (incomeHistory.slice(incomeHistory.length-3, incomeHistory.length).reverse().map((i) => (
+        <IncomeItem
+          key={i.id}
+          title={i.description}
+          amount={i.amount}
+          date={i.date}
+          button={
+          <button className="bg-red-500 text-white rounded-full p-2" onClick={() => { deleteIncomeEntryHandler(i.id)}}>
+            <IoTrashOutline />
+          </button>
+        }
         />
+      ))) : (incomeHistory.map((i) => (
+        <IncomeItem
+          key={i.id}
+          title={i.description}
+          amount={i.amount}
+          date={i.date}
+          button={
+          <button className="bg-red-500 text-white rounded-full p-2" onClick={() => { deleteIncomeEntryHandler(i.id)}}>
+            <IoTrashOutline />
+          </button>
+        }
+        />
+      )))}
+
+    </section>
+
+    {/* Expense History */}
+    <section className="py-4">
+      <div className="flex justify-between items-center">
+      <h3 className="text-xl font-bold">Expense History</h3>
+      <Link href="/expensehistory"><button className="bg-blue-500 rounded-lg px-2 py-1 text-white">View All</button></Link>
       </div>
 
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+      {expenseHistory.length > 3 ? (expenseHistory.slice(expenseHistory.length-3, incomeHistory.length).reverse().map((expense) => (
+        <ExpenseItem
+          key={expense.id}
+          description={expense.description}
+          amount={expense.amount}
+          paymentType = {expense.paymentType}
+          category = {expense.category}
+          color = {expense.color}
+          paymentTypeColor = {paymentTypes.find(paymentType => paymentType.title === expense.paymentType).color}
+          date={expense.date}
+          icon={categories.find(category => category.title === expense.category).icon}
+          button={
+            <button className="bg-red-500 text-white rounded-full p-2" onClick={() => { deleteExpenseEntryHandler(expense.id)}}>
+              <IoTrashOutline />
+            </button>
+          }
+        />
+      ))) : (expenseHistory.map((expense) => (
+        <ExpenseItem
+          key={expense.id}
+          description={expense.description}
+          amount={expense.amount}
+          paymentType = {expense.paymentType}
+          category = {expense.category}
+          color = {expense.color}
+          paymentTypeColor = {paymentTypes.find(paymentType => paymentType.title === expense.paymentType).color}
+          date={expense.date}
+          icon={categories.find(category => category.title === expense.category).icon}
+          button={
+            <button className="bg-red-500 text-white rounded-full p-2" onClick={() => { deleteExpenseEntryHandler(expense.id)}}>
+              <IoTrashOutline />
+            </button>
+          }
+        />
+      )))}
+    </section>
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800 hover:dark:bg-opacity-30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+    {/* Chart */}
+    <section className="pt-6 pb-[128px]">
+      <h3 className="text-xl font-bold">Stats</h3>
+      <div className="w-1/2 mx-auto">
+        <Doughnut data={{
+          labels: expenseHistory.map(expense => expense.category),
+          datasets: [
+            {
+              label: "Expenses",
+              data: expenseHistory.map(expense => expense.amount),
+              backgroundColor: expenseHistory.map(expense => expense.color),
+              borderColor: ['#fff'],
+              borderWidth: 5,
+            }
+          ]
+        }} />
       </div>
+    </section>
+
     </main>
+
+    {/* Bottom Nav */}
+    <Footer openModal={() => setModalIsOpen(true)}/>
+
+    </>
   );
 }
