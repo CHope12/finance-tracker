@@ -42,8 +42,8 @@ const Nav = () => {
           <PiPaintBrushBroad className="text-2xl" />
         </div>
         */}
-        <div className="rounded-full bg-slate-100 p-2">
-          <IoLogOutOutline className="text-2xl" onClick={logout}/>
+        <div className="rounded-full bg-slate-100 p-2 cursor-pointer" onClick={logout}>
+          <IoLogOutOutline className="text-2xl" />
         </div>
       </nav>
 
