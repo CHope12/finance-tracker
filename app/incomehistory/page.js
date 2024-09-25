@@ -8,6 +8,8 @@ import Footer from "@/components/Footer";
 import SignIn from "@/components/SignIn";
 import IncomeItem from "@/components/IncomeItem";
 
+import sortByDate from '@/lib/sortByDate'
+
 //Firebase
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, getFirestore, doc, deleteDoc, query, where } from 'firebase/firestore';
@@ -158,7 +160,8 @@ export default function Home() {
           date: new Date(doc.data().date.toMillis()),
         };
       })
-      setIncomeHistory(data);
+      let income = sortByDate(data)
+      setIncomeHistory(income);
     };
     getIncomeData();
   }, [user]);
@@ -178,6 +181,7 @@ export default function Home() {
       <div className="flex justify-between items-center mb-4">
       <h3 className="text-xl font-bold">Income History</h3>
       </div>
+      <div className="flex flex-col min-h-content pb-24">
       {incomeHistory.map((i) => (
         <IncomeItem
           key={i.id}
@@ -185,12 +189,13 @@ export default function Home() {
           amount={i.amount}
           date={i.date}
           button={
-          <button className="bg-red-500 text-white rounded-full p-2" onClick={() => { deleteIncomeEntryHandler(i.id)}}>
+          <button title="Delete" className="bg-red-500 text-white rounded-full p-2" onClick={() => { deleteIncomeEntryHandler(i.id)}}>
             <IoTrashOutline />
           </button>
         }
         />
       ))}
+      </div>
     </main>
     <Footer openModal={() => setModalIsOpen(true)}/>
     </>

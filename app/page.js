@@ -13,6 +13,8 @@ import ExpenseCategoryItem from '@/components/ExpenseCategoryItem';
 import IncomeItem from '@/components/IncomeItem';
 import ExpenseItem from '@/components/ExpenseItem';
 
+import sortByDate from "./../lib/sortByDate";
+
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -45,62 +47,62 @@ const categories = [
   {
     title: "Housing",
     color: "#FF6384",
-    icon: <IoHome />,
+    icon: <IoHome title="Housing" />,
   },
   {
     title: "Transportation",
     color: "#36A2EB",
-    icon: <IoCar />,
+    icon: <IoCar title="Transportation" />,
   },
   {
     title: "Food",
     color: "#FFCE56",
-    icon: <LuUtensils />,
+    icon: <LuUtensils title="Food" />,
   },
   {
     title: "Healthcare",
     color: "#4BC0C0",
-    icon: <FaRegHospital />,
+    icon: <FaRegHospital title="Healthcare" />,
   },
   {
     title: "Entertainment",
     color: "#FF9F40",
-    icon: <IoFilm />,
+    icon: <IoFilm title="Entertainment" />,
   },
   {
     title: "Shopping",
     color: "#FFCD56",
-    icon: <FiShoppingCart/>,
+    icon: <FiShoppingCart title="Shopping" />,
   },
   {
     title: "Education",
     color: "#FF6384",
-    icon: <IoBook />,
+    icon: <IoBook title="Education" />,
   },
   {
     title: "Personal Care",
     color: "#36A2EB",
-    icon: <IoCut />,
+    icon: <IoCut title="Personal Care" />,
   },
   {
     title: "Travel",
     color: "#FFCE56",
-    icon: <IoAirplane />,
+    icon: <IoAirplane title="Travel" />,
   },
   {
     title: "Miscellaneous",
     color: "#4BC0C0",
-    icon: <IoEllipsisHorizontal />,
+    icon: <IoEllipsisHorizontal title="Miscellaneous" />,
   },
   {
     title: "Savings & Investments",
     color: "#FF9F40",
-    icon: <PiPiggyBank />,
+    icon: <PiPiggyBank title="Savings & Investments" />,
   },
   {
     title: "Utilities",
     color: "#FFCD56",
-    icon: <HiOutlineBolt />,
+    icon: <HiOutlineBolt title="Utilities" />,
   }
 ];
 
@@ -168,8 +170,6 @@ const paymentTypes = [
       if(!user){
         return;
       }
-
-      console.log(user);
       
       //update income
       const getIncomeData = async () => {                
@@ -185,7 +185,8 @@ const paymentTypes = [
             date: new Date(doc.data().date.toMillis()),
           };
         })
-        setIncomeHistory(data);
+        let income = sortByDate(data);
+        setIncomeHistory(income);
       };
       getIncomeData();
 
@@ -203,7 +204,8 @@ const paymentTypes = [
             date: new Date(doc.data().date.toMillis()),
           };
         })
-        setExpenseHistory(data);    
+        let expense = sortByDate(data);
+        setExpenseHistory(expense);
       };
       getExpenseData();
 
@@ -328,14 +330,14 @@ const paymentTypes = [
       <Link href="/incomehistory"><button className="bg-blue-500 rounded-lg px-2 py-1 text-white">View All</button></Link>
       </div>
 
-      {incomeHistory.length > 3 ? (incomeHistory.slice(incomeHistory.length-3, incomeHistory.length).reverse().map((i) => (
+      {incomeHistory.length > 3 ? (incomeHistory.slice(0, 3).map((i) => (
         <IncomeItem
           key={i.id}
           title={i.description}
           amount={i.amount}
           date={i.date}
           button={
-          <button className="bg-red-500 text-white rounded-full p-2" onClick={() => { deleteIncomeEntryHandler(i.id)}}>
+          <button title="Delete" className="bg-red-500 text-white rounded-full p-2" onClick={() => { deleteIncomeEntryHandler(i.id)}}>
             <IoTrashOutline />
           </button>
         }
@@ -347,7 +349,7 @@ const paymentTypes = [
           amount={i.amount}
           date={i.date}
           button={
-          <button className="bg-red-500 text-white rounded-full p-2" onClick={() => { deleteIncomeEntryHandler(i.id)}}>
+          <button title="Delete" className="bg-red-500 text-white rounded-full p-2" onClick={() => { deleteIncomeEntryHandler(i.id)}}>
             <IoTrashOutline />
           </button>
         }
@@ -363,7 +365,7 @@ const paymentTypes = [
       <Link href="/expensehistory"><button className="bg-blue-500 rounded-lg px-2 py-1 text-white">View All</button></Link>
       </div>
 
-      {expenseHistory.length > 3 ? (expenseHistory.slice(expenseHistory.length-3, incomeHistory.length).reverse().map((expense) => (
+      {expenseHistory.length > 3 ? (expenseHistory.slice(0, 3).map((expense) => (
         <ExpenseItem
           key={expense.id}
           description={expense.description}
@@ -375,7 +377,7 @@ const paymentTypes = [
           date={expense.date}
           icon={categories.find(category => category.title === expense.category).icon}
           button={
-            <button className="bg-red-500 text-white rounded-full p-2" onClick={() => { deleteExpenseEntryHandler(expense.id)}}>
+            <button title="Delete" className="bg-red-500 text-white rounded-full p-2" onClick={() => { deleteExpenseEntryHandler(expense.id)}}>
               <IoTrashOutline />
             </button>
           }
@@ -392,7 +394,7 @@ const paymentTypes = [
           date={expense.date}
           icon={categories.find(category => category.title === expense.category).icon}
           button={
-            <button className="bg-red-500 text-white rounded-full p-2" onClick={() => { deleteExpenseEntryHandler(expense.id)}}>
+            <button title="Delete" className="bg-red-500 text-white rounded-full p-2" onClick={() => { deleteExpenseEntryHandler(expense.id)}}>
               <IoTrashOutline />
             </button>
           }
@@ -401,9 +403,9 @@ const paymentTypes = [
     </section>
 
     {/* Chart */}
-    <section className="pt-6 pb-[128px]">
+    <section className="pt-6 pb-24 md:pb-48">
       <h3 className="text-xl font-bold">Stats</h3>
-      <div className="w-1/2 mx-auto">
+      <div className="w-full h-[250px] md:w-1/2 md:h-auto md:mx-auto flex justify-center items-center">
         <Doughnut data={{
           labels: expenseHistory.map(expense => expense.category),
           datasets: [

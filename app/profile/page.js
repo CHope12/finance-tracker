@@ -9,6 +9,10 @@ import SignIn from "@/components/SignIn"
 
 import { IoWarningOutline } from "react-icons/io5";
 
+
+import { db } from '@/lib/firebase';
+import { collection, addDoc, getDocs, getFirestore, doc, deleteDoc, query, where } from 'firebase/firestore';
+
 export default function Home() {
 
   const { user, loading } = useContext(authContext);
@@ -21,6 +25,27 @@ export default function Home() {
     )
   }
 
+  const deleteData = async () => {    
+    try {
+      // Delete expenses
+      const expensesQuery = query(collection(db, "expenses"), where("uid", "==", user.uid));
+      const expensesSnapshot = await getDocs(expensesQuery);
+      const expensesDeletions = expensesSnapshot.docs.map((doc) => deleteDoc(doc.ref));
+  
+      // Delete income
+      const incomeQuery = query(collection(db, "income"), where("uid", "==", user.uid));
+      const incomeSnapshot = await getDocs(incomeQuery);
+      const incomeDeletions = incomeSnapshot.docs.map((doc) => deleteDoc(doc.ref));
+  
+      // Execute all deletions
+      await Promise.all([...expensesDeletions, ...incomeDeletions]);
+  
+      console.log("Data successfully deleted.");
+    } catch (error) {
+      console.error("Error removing document: ", error);
+    }
+  };
+
   return (
     <>    
     <main className="py-6">
@@ -31,8 +56,8 @@ export default function Home() {
         <span>Name: {user.displayName}</span>
         <span>Email: {user.email}</span>
         <span>Verified: {user.emailVerified == true ? "✅" : "❌"}</span>
-        <button className="bg-red-500 p-4 w-1/3 text-white font-bold">
-          <span className="flex justify-center items-center gap-2">Delete data <IoWarningOutline className="text-2xl"/></span>
+        <button className="bg-red-500 p-4 md:w-1/3 text-white font-bold">
+          <span className="flex justify-center items-center gap-2" onClick={deleteData}>Delete data <IoWarningOutline className="text-2xl"/></span>
         </button>
       </div>
     </main>    

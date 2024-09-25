@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import MobileSwiper from '@/components/MobileSwiper'
 
 //Firebase
 import { db } from '@/lib/firebase';
@@ -176,86 +177,95 @@ const modal = ({ open, close, user, updateIncome, updateExpenses, categories, pa
     }
   };
 
+  //Swipe
+  const handleSwipe = useCallback(({ deltaY }) => {    
+    if (deltaY > 100) {
+      close();
+    }
+  });
+
   return (
-    <div 
-    className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-end justify-center z-[2] transition-transform duration-300 ease-in-out overflow-hidden"
-    style={{
-      transform: open ? "translateY(0)" : "translateY(100%)",
-    }}
-   >
-    <div className="bg-white p-8 rounded-3xl mx-4 mb-4">
-      
-      <div className="w-1/4 h-2 bg-gray-300 rounded-full mx-auto" onClick={() => close()}></div>
-      
-      <form className="mt-3" onSubmit={handleSubmit}>
-        <div className="flex flex-col gap-4 justify-center items-center">
-
-        {!modalIsIncome && (
-          <div className="flex gap-4 w-full h-[50px] mt-2">
-            {/* payment type */}
-            <select className="p-2 rounded-full w-full" ref={paymentTypeRef} onChange={handlePaymentTypeChange} style={{backgroundColor: paymentTypes[0].color}}>
-              <option>Cash</option>
-              <option>Card</option>
-              <option>Bank</option>
-            </select>
-            {/* category */ }
-            <select className="p-2 rounded-full w-full" ref={categoryRef} onChange={handleCategoryChange} style={{backgroundColor: categories[0].color}}>
-              {categories.map(category => (
-                <option key={category.title}>{category.title}</option>
-              ))}
-            </select>
-          </div>
-          )}
-
-          {/* income/expense toggle */}
-          <div className="button r w-full h-[50px]" id="button-1">          
-            <div className="absolute w-full flex justify-around text-2xl font-bold text-black leading-[45px]">
-              <div>Income</div>
-              <div>Expense</div>
-            </div>
-            <input type="checkbox" className="checkbox" onClick={() => setModalIsIncome(!modalIsIncome)}/>
-              <div className="knobs"></div>
-            <div className="layer"></div>          
-          </div>
+    <MobileSwiper onSwipe={handleSwipe}>
+      <div 
+      className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-end justify-center z-[2] transition-transform duration-300 ease-in-out overflow-hidden"
+      style={{
+        transform: open ? "translateY(0)" : "translateY(100%)",
+      }}    
+    >
+      <div className="bg-white rounded-3xl p-4 md:mx-4 md:mb-4 md:p-8">
         
-          {/* amount */}
-          <div className="flex justify-center items-end w-1/2 my-3">
-            <span className="text-gray-400 text-5xl mb-1">£</span>
-            <span className="text-7xl">{amountInput}</span>              
+        <div className="w-1/4 h-2 bg-gray-300 rounded-full mx-auto my-2 md:my-0 cursor-pointer" onClick={close} />
+        
+        <form className="md:mt-3" onSubmit={handleSubmit}>
+          <div className="flex flex-col md:gap-4 justify-center items-center">
+
+          {!modalIsIncome && (
+            <div className="flex gap-4 w-full md:h-[50px] py-2">
+              {/* payment type */}
+              <select className="p-2 rounded-full w-full" ref={paymentTypeRef} onChange={handlePaymentTypeChange} style={{backgroundColor: paymentTypes[0].color}}>
+                <option>Cash</option>
+                <option>Card</option>
+                <option>Bank</option>
+              </select>
+              {/* category */ }
+              <select className="p-2 rounded-full w-full" ref={categoryRef} onChange={handleCategoryChange} style={{backgroundColor: categories[0].color}}>
+                {categories.map(category => (
+                  <option key={category.title}>{category.title}</option>
+                ))}
+              </select>
+            </div>
+            )}
+
+            {/* income/expense toggle */}
+            <div className="button r w-full h-[50px] my-3" id="button-1">          
+              <div className="absolute w-full flex justify-around text-2xl font-bold text-black leading-[45px]">
+                <div>Income</div>
+                <div>Expense</div>
+              </div>
+              <input type="checkbox" className="checkbox" onClick={() => setModalIsIncome(!modalIsIncome)}/>
+                <div className="knobs"></div>
+              <div className="layer"></div>          
+            </div>
+          
+            {/* amount */}
+            <div className="flex justify-center items-end w-1/2 md:my-3">
+              <span className="text-gray-400 text-5xl md:mb-1">£</span>
+              <span className="text-7xl">{amountInput}</span>              
+            </div>
+
+            {/* description */}
+            <input ref={descriptionRef} type="text" placeholder="Add description..." className="p-2 rounded-lg text-center text-2xl" />
+
+            {/* add number input buttons like a calculator */}
+            <div className="grid grid-cols-4 gap-2 w-full mb-2">
+                  <button type="button" className="bg-gray-200 py-2 md:px-2 md:py-4  rounded-3xl" onClick={() => handleButtonClick("1")}>1</button>
+                  <button type="button" className="bg-gray-200 py-2 md:px-2 md:py-4 rounded-3xl" onClick={() => handleButtonClick("2")}>2</button>
+                  <button type="button" className="bg-gray-200 py-2 md:px-2 md:py-4 rounded-3xl" onClick={() => handleButtonClick("3")}>3</button>
+                  <button type="button" className="bg-red-500 text-white py-2 md:p-2 rounded-3xl flex justify-center items-center" onClick={handleBackspace}>
+                    <IoBackspaceOutline className="text-2xl" />
+                  </button>
+                  <button type="button" className="bg-gray-200 py-2 md:px-2 md:py-4 rounded-3xl" onClick={() => handleButtonClick("4")}>4</button>
+                  <button type="button" className="bg-gray-200 py-2 md:px-2 md:py-4 rounded-3xl" onClick={() => handleButtonClick("5")}>5</button>
+                  <button type="button" className="bg-gray-200 py-2 md:px-2 md:py-4 rounded-3xl" onClick={() => handleButtonClick("6")}>6</button>
+                  <button type="button" className="bg-gray-500 text-white py-2 md:p-2 md:py-4 rounded-3xl flex justify-center items-center" onClick={handleDate}>
+                    <IoCalendarClearOutline className="text-2xl" />
+                  </button>
+                  <button type="button" className="bg-gray-200 py-2 md:px-2 md:py-4 rounded-3xl" onClick={() => handleButtonClick("7")}>7</button>
+                  <button type="button" className="bg-gray-200 py-2 md:px-2 md:py-4 rounded-3xl" onClick={() => handleButtonClick("8")}>8</button>
+                  <button type="button" className="bg-gray-200 py-2 md:px-2 md:py-4 rounded-3xl" onClick={() => handleButtonClick("9")}>9</button>
+                  <button type="button" className="bg-blue-500 text-white py-2 md:p-2 rounded-3xl h-[200%] flex justify-center items-center" onClick={handleSubmit}>
+                    <IoCheckmarkSharp className="text-2xl" />
+                  </button>
+                  <button type="button" className="pointer-events-none py-2 md:px-2"></button>
+                  <button type="button" className="bg-gray-200 py-2 md:px-2 md:py-4 rounded-3xl" onClick={() => handleButtonClick("0")}>0</button>
+                  <button type="button" className="bg-gray-200 py-2 md:px-2 md:py-4 rounded-3xl" onClick={handleDecimal}>.</button>
+                </div>           
+
           </div>
-
-          {/* description */}
-          <input ref={descriptionRef} type="text" placeholder="Add description..." className="p-2 rounded-lg text-center text-2xl" />
-
-          {/* add number input buttons like a calculator */}
-          <div className="grid grid-cols-4 gap-2 w-full h-[575px]">
-                <button type="button" className="bg-gray-100 p-2 rounded-3xl" onClick={() => handleButtonClick("1")}>1</button>
-                <button type="button" className="bg-gray-100 p-2 rounded-3xl" onClick={() => handleButtonClick("2")}>2</button>
-                <button type="button" className="bg-gray-100 p-2 rounded-3xl" onClick={() => handleButtonClick("3")}>3</button>
-                <button type="button" className="bg-red-500 text-white p-2 rounded-3xl flex justify-center items-center" onClick={handleBackspace}>
-                  <IoBackspaceOutline className="w-1/3 h-1/3" />
-                </button>
-                <button type="button" className="bg-gray-100 p-2 rounded-3xl" onClick={() => handleButtonClick("4")}>4</button>
-                <button type="button" className="bg-gray-100 p-2 rounded-3xl" onClick={() => handleButtonClick("5")}>5</button>
-                <button type="button" className="bg-gray-100 p-2 rounded-3xl" onClick={() => handleButtonClick("6")}>6</button>
-                <button type="button" className="bg-gray-500 text-white p-2 rounded-3xl flex justify-center items-center" onClick={handleDate}>
-                  <IoCalendarClearOutline className="w-1/3 h-1/3" />
-                </button>
-                <button type="button" className="bg-gray-100 p-2 rounded-3xl" onClick={() => handleButtonClick("7")}>7</button>
-                <button type="button" className="bg-gray-100 p-2 rounded-3xl" onClick={() => handleButtonClick("8")}>8</button>
-                <button type="button" className="bg-gray-100 p-2 rounded-3xl" onClick={() => handleButtonClick("9")}>9</button>
-                <button type="button" className="bg-blue-500 text-white p-2 rounded-3xl h-[200%] flex justify-center items-center" onClick={handleSubmit}>
-                  <IoCheckmarkSharp className="w-1/3 h-1/3" />
-                </button>
-                <button type="button" className="pointer-events-none p-2"></button>
-                <button type="button" className="bg-gray-100 p-2 rounded-3xl" onClick={() => handleButtonClick("0")}>0</button>
-                <button type="button" className="bg-gray-100 p-2 rounded-3xl" onClick={handleDecimal}>.</button>
-              </div>           
-
-        </div>
-      </form>
-    </div>
-  </div>  
+        </form>
+      </div>
+    </div>  
+  </MobileSwiper>
   );
 };
 

@@ -1,4 +1,5 @@
 import React from 'react'
+import convertDate from '@/lib/convertDate';
 
 function IncomeItem({title, amount, date, button}) {
   return (
@@ -6,7 +7,7 @@ function IncomeItem({title, amount, date, button}) {
       <div className="flex gap-8">
         <div className="flex flex-col">
           <span className="text-md">{title == "" ? "No name" : title}</span>
-          <span className="text-gray-400 text-sm">{date.toISOString()}</span>
+          <span className="text-gray-400 text-sm">{convertDate(date.toISOString())}</span>
         </div>
       </div>
       <div className="flex gap-4 justify-center items-center">

@@ -8,6 +8,8 @@ import Footer from "@/components/Footer";
 import SignIn from "@/components/SignIn";
 import ExpenseItem from "@/components/ExpenseItem";
 
+import sortByDate from '@/lib/sortByDate'
+
 //Firebase
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, getFirestore, doc, deleteDoc, query, where } from 'firebase/firestore';
@@ -36,62 +38,62 @@ const categories = [
   {
     title: "Housing",
     color: "#FF6384",
-    icon: <IoHome />,
+    icon: <IoHome title="Housing" />,
   },
   {
     title: "Transportation",
     color: "#36A2EB",
-    icon: <IoCar />,
+    icon: <IoCar title="Transportation" />,
   },
   {
     title: "Food",
     color: "#FFCE56",
-    icon: <LuUtensils />,
+    icon: <LuUtensils title="Food" />,
   },
   {
     title: "Healthcare",
     color: "#4BC0C0",
-    icon: <FaRegHospital />,
+    icon: <FaRegHospital title="Healthcare" />,
   },
   {
     title: "Entertainment",
     color: "#FF9F40",
-    icon: <IoFilm />,
+    icon: <IoFilm title="Entertainment" />,
   },
   {
     title: "Shopping",
     color: "#FFCD56",
-    icon: <FiShoppingCart/>,
+    icon: <FiShoppingCart title="Shopping" />,
   },
   {
     title: "Education",
     color: "#FF6384",
-    icon: <IoBook />,
+    icon: <IoBook title="Education" />,
   },
   {
     title: "Personal Care",
     color: "#36A2EB",
-    icon: <IoCut />,
+    icon: <IoCut title="Personal Care" />,
   },
   {
     title: "Travel",
     color: "#FFCE56",
-    icon: <IoAirplane />,
+    icon: <IoAirplane title="Travel" />,
   },
   {
     title: "Miscellaneous",
     color: "#4BC0C0",
-    icon: <IoEllipsisHorizontal />,
+    icon: <IoEllipsisHorizontal title="Miscellaneous" />,
   },
   {
     title: "Savings & Investments",
     color: "#FF9F40",
-    icon: <PiPiggyBank />,
+    icon: <PiPiggyBank title="Savings & Investments" />,
   },
   {
     title: "Utilities",
     color: "#FFCD56",
-    icon: <HiOutlineBolt />,
+    icon: <HiOutlineBolt title="Utilities" />,
   }
 ];
 
@@ -158,7 +160,8 @@ export default function Home() {
           date: new Date(doc.data().date.toMillis()),
         };
       })
-      setExpenseHistory(data);    
+      let expense = sortByDate(data);
+      setExpenseHistory(expense);
     };
     getExpenseData();
   }, [user]);
@@ -190,7 +193,7 @@ export default function Home() {
           date={expense.date}
           icon={categories.find(category => category.title === expense.category).icon}
           button={
-            <button className="bg-red-500 text-white rounded-full p-2" onClick={() => { deleteExpenseEntryHandler(expense.id)}}>
+            <button title="Delete" className="bg-red-500 text-white rounded-full p-2" onClick={() => { deleteExpenseEntryHandler(expense.id)}}>
               <IoTrashOutline />
             </button>
           }

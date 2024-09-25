@@ -37,9 +37,11 @@ const Nav = () => {
 
       {/* Button section */}
       <nav className="flex items-center gap-2">
+        {/*
         <div className="rounded-full bg-slate-100 p-2">
           <PiPaintBrushBroad className="text-2xl" />
         </div>
+        */}
         <div className="rounded-full bg-slate-100 p-2">
           <IoLogOutOutline className="text-2xl" onClick={logout}/>
         </div>
