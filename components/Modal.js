@@ -115,23 +115,9 @@ const modal = ({ open, close, user, updateIncome, updateExpenses, categories, pa
       console.error("Error adding document: ", e);
     }
   };
-  
-  const deleteIncomeEntryHandler = async (id) => {
-    const docRef = doc(db, "income", id);
-    try {
-      await deleteDoc(docRef);
-
-      //Update state
-      setIncomeHistory(prevState => {
-        return prevState.filter(income => income.id !== id);
-      });
-    } catch (e) {
-      console.error("Error deleting document: ", e);
-    }
-  }
 
   /* Expense */
-  const addExpenseHandler = (e) => {
+  const addExpenseHandler = async (e) => {
     e.preventDefault();
 
     const newExpense = {
@@ -146,7 +132,7 @@ const modal = ({ open, close, user, updateIncome, updateExpenses, categories, pa
 
     const collectionRef = collection(db, "expenses");
     try {
-    const docSnap = addDoc(collectionRef, newExpense);
+    const docSnap = await addDoc(collectionRef, newExpense);
 
     updateExpenses(prevState => {
       return[
@@ -161,20 +147,6 @@ const modal = ({ open, close, user, updateIncome, updateExpenses, categories, pa
     } catch (e) {
       console.error("Error adding document: ", e);
     }      
-  };
-
-  const deleteExpenseEntryHandler = async (id) => {
-    const docRef = doc(db, "expenses", id);
-    try {
-      await deleteDoc(docRef);
-
-      //Update state
-      setExpenseHistory(prevState => {
-        return prevState.filter(expense => expense.id !== id);
-      });
-    } catch (e) {
-      console.error("Error deleting document: ", e);
-    }
   };
 
   //Swipe
