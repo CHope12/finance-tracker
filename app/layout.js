@@ -7,9 +7,11 @@ import Nav from "@/components/Nav";
 
 const inter = Inter({ subsets: ["latin"] });
 
+/*
 export const metadata = {
   title: 'Finance Tracker'  
 };
+*/
 
 export default function RootLayout({ children }) {
   return (
